@@ -2,6 +2,11 @@ from enum import Enum
 import random
 import copy
 
+#<<Reward Functions>>
+SURVIVAL_REWARD = 10
+ACTION_REWARD = -1
+TETRIS_REWARD = 1000
+
 class Piece:
 
     def __init__(self):
@@ -55,12 +60,12 @@ class Game:
         self.score = 0
         self.current_piece_location = [0, 0]  # [ycoordinate, xcoordinate]
         self.nextPiece()
-        self.play_debug()
         return
 
     def doAction(self, action): # when return false, game over
         checkRotate = False
         if action == 0:
+            self.score += SURVIVAL_REWARD
             dy, dx = 1, 0
         elif action == 1:
             dy, dx = 0, -1
@@ -84,8 +89,8 @@ class Game:
         self.current_piece = Piece()
         self.current_piece_location = [0, 0]
         if self.checkObstruction(0, 0):
-            return False
-        return True
+            return True
+        return False
 
     def checkObstruction(self, dy, dx, rotate=False):
         if rotate:
@@ -113,19 +118,30 @@ class Game:
         layer = len(self.board) - 1
         for i in range(len(self.board)-1,-1,-1):
             if sum(self.board[i]) == len(self.board[0]):
-                print("Tetris!") # TODO: need to calculate the grade
+                self.score += TETRIS_REWARD
             else:
                 newBoard[layer] = self.board[i]
                 layer -= 1
         self.board = newBoard
         if not self.nextPiece():
-            print("YOU LOST")
+            return False
+        return True
 
     def wrapper(self, action): # nerual net should use this function directly
         if self.doAction(action):
-            return self.board
-        return self.score
+            self.score -= ACTION_REWARD
+            return True, self.getRender()
+        return False, self.score
 
+    def getRender(self):
+        copyList = copy.deepcopy(self.board)
+        shape = self.current_piece.getShape()
+        dy, dx = self.current_piece_location[0], self.current_piece_location[1]
+        for y in range(len(shape)):
+            for x in range(len(shape[0])):
+                if shape[y][x] == 1:
+                    copyList[dy + y][dx + x] = 1
+        return copyList
     # <<<< debug functions >>>>
 
     def play_debug(self):
@@ -147,7 +163,7 @@ class Game:
             print(copyList[line])
 
 
-temp = Game(10, 5)
-temp.display_debug()
-temp.doAction(0)
-temp.display_debug()
+# temp = Game(10, 5)
+# temp.display_debug()
+# temp.doAction(0)
+# temp.display_debug()

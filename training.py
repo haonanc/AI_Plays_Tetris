@@ -1,4 +1,5 @@
 import torch
+import random
 from torch import nn
 from core import Game
 import matplotlib.pyplot as plt
@@ -25,8 +26,7 @@ class Classifier(nn.Module):
         return yhat
 
 
-def train():
-    classifier = Classifier()
+def train(classifier):
     game = Game(WIDTH, HEIGHT)
     nextAction = 0
     maxium_actions = MAXIUM_ACTION_PER_FRAME
@@ -46,11 +46,28 @@ def train():
                 maxium_actions = MAXIUM_ACTION_PER_FRAME
             else:
                 maxium_actions -= 1
+
+def mutate(classifier):
+    for p in classifier.parameters():
+        p.data -= p.data*(random.randint(-25, 25)/100)
+    return classifier
+
 temp = []
 number_of_nn = 100
-for i in range(number_of_nn):
-    r = train()
-    temp.append(r)
-    if i % (number_of_nn / 10) == 0:
-        print(i / (number_of_nn / 100), "% done")
-print(sorted(temp))
+rounds = 5
+classifier = []
+result = []
+for p in range(number_of_nn):
+    classifier.append(Classifier())
+for i in range(rounds):
+    for j in range(number_of_nn):
+        r = train(classifier[j])
+        temp.append((r, classifier[j]))
+    temp.sort(key=lambda x : x[0])
+    selected_classifiers = temp[number_of_nn-5:number_of_nn] #Choose the best 5
+    for k in range(number_of_nn):
+        classifier[k] = mutate(selected_classifiers[k%len(selected_classifiers)][1])
+    temp.clear()
+    print([p[0] for p in selected_classifiers])
+    print(((i+1)*100/rounds), "% done")
+    print("--------------------------")

@@ -2,10 +2,10 @@ import torch
 import random
 from torch import nn
 from core import Game
-import matplotlib.pyplot as plt
-from abc import ABC
 import torch.nn.functional as F
-WIDTH, HEIGHT = 12, 20
+
+
+WIDTH, HEIGHT = 12, 12
 MAXIUM_ACTION_PER_FRAME = 5
 
 
@@ -13,19 +13,23 @@ class Classifier(nn.Module):
 
     def __init__(self, geneID):
         super(Classifier, self).__init__()
-        self.linear = nn.Linear(WIDTH * HEIGHT, 12)
+        self.conv1 = nn.Conv2d(1,1,3, padding=1)
+        self.linear = nn.Linear(36, 12)
         self.linear2 = nn.Linear(12, 4)
         self.log_softmax = nn.LogSoftmax(dim=0)
         self.geneID = geneID
 
     def forward(self, x):
-        gx = F.relu(self.linear(x))
+        out = F.relu(self.conv1(x))
+        out = F.max_pool2d(out, 2)
+        qx = out.view(out.size(0), -1)
+        gx = F.relu(self.linear(qx))
         cx = F.relu(self.linear2(gx))
         yhat = self.log_softmax(cx)
         return yhat
 
 def train(classifier):
-    game = Game(WIDTH, HEIGHT, 0)
+    game = Game(WIDTH, HEIGHT)
     nextAction = 0
     maxium_actions = MAXIUM_ACTION_PER_FRAME
     while True:
@@ -33,7 +37,7 @@ def train(classifier):
         if not alive:
             return returnValue
         else:
-            grid = torch.FloatTensor(returnValue).reshape(-1)
+            grid = torch.FloatTensor(returnValue).unsqueeze(0).unsqueeze(0)
         if maxium_actions == 0:
             maxium_actions = MAXIUM_ACTION_PER_FRAME
             nextAction = 0
@@ -45,12 +49,11 @@ def train(classifier):
             else:
                 maxium_actions -= 1
 
-
 def mutate(classifier):
     newClassifier = Classifier(classifier.geneID)
+    for p in classifier.parameters():
+        p.data -= p.data*(random.randint(-6, 6)/100)
     newClassifier.load_state_dict(classifier.state_dict())
-    for p in newClassifier.parameters():
-        p.data -= p.data*(random.randint(-1, 1)/100)
     return newClassifier
 
 temp = []
@@ -75,7 +78,7 @@ for i in range(rounds):
         temp_classifier = selected_classifiers[k % len(selected_classifiers)][2]
         newClassifier = Classifier(temp_classifier.geneID)
         newClassifier.load_state_dict(temp_classifier.state_dict())
-        classifier[k] = newClassifier
+        classifier[k] = temp_classifier
     print([(p[0],p[1]) for p in temp])
     temp.clear()
     print(((i+1)*100/rounds), "% done")

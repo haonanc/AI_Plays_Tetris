@@ -55,7 +55,9 @@ class Action(Enum):
 
 class Game:
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, seed=None):
+        if seed:
+            random.seed(seed)
         self.board = [[0 for _y in range(height)] for _x in range(width)]
         self.score = 0
         self.current_piece_location = [0, 0]  # [ycoordinate, xcoordinate]

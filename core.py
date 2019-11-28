@@ -163,7 +163,7 @@ class Game:
             print(copyList[line])
 
 
-# temp = Game(10, 5)
-# temp.display_debug()
-# temp.doAction(0)
-# temp.display_debug()
+temp = Game(10, 5)
+temp.display_debug()
+temp.doAction(0)
+temp.display_debug()

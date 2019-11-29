@@ -3,23 +3,32 @@ import random
 import copy
 
 #<<Reward Functions>>
-SURVIVAL_REWARD = 10
-ACTION_REWARD = -1
+SURVIVAL_REWARD = 0
+ACTION_REWARD = 0
 TETRIS_REWARD = 1000
+
 
 class Piece:
 
     def __init__(self):
+        global GlOBAL_TEST
         self.orientation = 0
         self.shapes = []
-        function = [self.I, self.O, self.T, self.S, self.Z]
+        function = [self.O,self.Test]
+        #function = [self.I, self.O, self.T, self.S, self.Z]
         function[random.randint(0, len(function) - 1)]()
+
+    def Test(self):
+        self.shapes = [[[1]]]
 
     def I(self):
         self.shapes = [[[1, 1, 1, 1]], [[1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0]]]
 
     def O(self):
         self.shapes = [[[1, 1], [1, 1]]]
+
+    def TESTO(self):
+        self.shapes = [[[1, 1]]]
 
     def T(self):
         self.shapes = [[[1, 1, 1], [0, 1, 0]], [[1, 0, 0], [1, 1, 0], [1, 0, 0]], [[0, 1, 0], [1, 1, 1]],
@@ -55,7 +64,9 @@ class Action(Enum):
 
 class Game:
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, seed=None):
+        if seed:
+            random.seed(seed)
         self.board = [[0 for _y in range(height)] for _x in range(width)]
         self.score = 0
         self.current_piece_location = [0, 0]  # [ycoordinate, xcoordinate]
@@ -129,9 +140,21 @@ class Game:
 
     def wrapper(self, action): # nerual net should use this function directly
         if self.doAction(action):
-            self.score -= ACTION_REWARD
+            self.score += ACTION_REWARD
             return True, self.getRender()
         return False, self.score
+
+    def getRender_(self):
+        currentBoard = [[0 for _y in range(len(self.board[0]))] for _x in range(len(self.board))]
+        shape = self.current_piece.getShape()
+        dy, dx = self.current_piece_location[0], self.current_piece_location[1]
+        for y in range(len(shape)):
+            for x in range(len(shape[0])):
+                if shape[y][x] == 1:
+                    currentBoard[dy + y][dx + x] = 1
+        ret = currentBoard + self.board
+        return ret
+
 
     def getRender(self):
         copyList = copy.deepcopy(self.board)
@@ -142,6 +165,7 @@ class Game:
                 if shape[y][x] == 1:
                     copyList[dy + y][dx + x] = 1
         return copyList
+
     # <<<< debug functions >>>>
 
     def play_debug(self):
@@ -162,8 +186,3 @@ class Game:
         for line in range(len(copyList)):
             print(copyList[line])
 
-
-temp = Game(10, 5)
-temp.display_debug()
-temp.doAction(0)
-temp.display_debug()

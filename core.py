@@ -144,7 +144,10 @@ class Game:
             return True, self.getRender()
         return False, self.score
 
-    def getRender_(self):
+    def getRender_new(self):
+        id = self.current_piece.id
+
+    def getRender(self):
         currentBoard = [[0 for _y in range(len(self.board[0]))] for _x in range(len(self.board))]
         shape = self.current_piece.getShape()
         dy, dx = self.current_piece_location[0], self.current_piece_location[1]
@@ -156,7 +159,7 @@ class Game:
         return ret
 
 
-    def getRender(self):
+    def getRender_(self):
         copyList = copy.deepcopy(self.board)
         shape = self.current_piece.getShape()
         dy, dx = self.current_piece_location[0], self.current_piece_location[1]

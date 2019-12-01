@@ -6,10 +6,11 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 
-WIDTH, HEIGHT = 12, 8
+WIDTH, HEIGHT = 16, 8
 MAXIUM_ACTION_PER_FRAME = 5
-MUTATION_RATE = 0.05
-MUTATION_VALUE = 0.4
+MUTATION_RATE = 0.1
+MUTATION_NEGATE_RATE = 0.1
+MUTATION_VALUE = 0.1
 SEED = 2
 
 
@@ -17,8 +18,8 @@ class Classifier(nn.Module):
 
     def __init__(self):
         super(Classifier, self).__init__()
-        self.linear = nn.Linear(WIDTH * HEIGHT, 10)
-        self.linear2 = nn.Linear(10, 2)
+        self.linear = nn.Linear(WIDTH * HEIGHT * 2, 100)
+        self.linear2 = nn.Linear(100, 2)
 
         # Softmax operator.
         # This is log(exp(a_i) / sum(a))
@@ -59,7 +60,6 @@ def check_model(model):
 
 def mutate(dad, mom):
     child = Classifier()
-
     for (p,q,i) in zip(dad.parameters(), mom.parameters(), child.parameters()):
         if random.random() < 0.5:
             i.data = p.data.clone()
@@ -68,18 +68,18 @@ def mutate(dad, mom):
     for p in child.parameters():
         for i in range(len(p)):
             if random.random() < MUTATION_RATE:
-                temp =  0.1 * (random.random()-0.5)
+                temp =  MUTATION_VALUE * (random.random()-0.5)
                 p.data[i] += temp
-            if random.random() < 0.1:
+            if random.random() < MUTATION_NEGATE_RATE:
                 p.data[i] *= -1
     return child
 
 temp = []
 number_of_nn = 100
-generation = 12
+generation = 100
 classifier = []
 result = []
-number_of_fittest = 10
+number_of_fittest = 25
 for p in range(number_of_nn):
     classifier.append(Classifier())
 for i in range(generation):
@@ -100,6 +100,7 @@ for i in range(generation):
         dad,mom = random.sample(selected_classifiers, 2)
         classifier[k] = mutate(dad[1], mom[1])
     temp.clear()
+    check_model(classifier[0])
     print("-------------Generation Report "+str(i)+"---------------")
     print(((i+1)*100/generation), "% done")
     temp_list = [p[0] for p in selected_classifiers]

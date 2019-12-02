@@ -18,8 +18,8 @@ class Piece:
         dict_id = {"I": 0, "O": 1, "T": 2, "S": 3, "Z": 4, "L": 5, "R": 6}
         if len(functions) == 0:
             functions = ["I","O","T","S","Z","L","R"]
-        random.shuffle(functions) # changed
-        temp = functions[0]
+            random.shuffle(functions)
+        temp = functions.pop()
         self.id = dict_id[temp]
         function = dict[temp]
         function()
@@ -83,7 +83,10 @@ class Game:
         self.score = 0
         self.current_piece_location = [0, 0]  # [ycoordinate, xcoordinate]
         self.nextPiece()
-        self.playAIDebug()
+        self.leftActions = 0
+        self.rotateActions = 0
+        self.shouldContinue = True
+        #self.playAIDebug()
         return
 
     def doAction(self, action, play=False): # when return false, game over
@@ -170,7 +173,9 @@ class Game:
         self.current_piece.setDefaultOrientation()
         number_of_left = number // 4
         number_of_rotate = number % 4
-        #print("trying", number, number_of_left, number_of_rotate)
+        self.leftActions = int(number_of_left)
+        self.rotateActions = int(number_of_rotate)
+
         while number_of_left:
             if not self.doAction(2):
                 return False
@@ -179,17 +184,21 @@ class Game:
             if not self.doAction(3):
                 return False
             number_of_rotate -= 1
-        while self.doAction(0):
-            continue
-        self.board = self.getRender_()
+        self.shouldContinue = False
+        self.current_piece_location = [0, 0]
+        self.current_piece.setDefaultOrientation()
         return True
 
     def wrapper(self, action_list):
+
+        if not self.shouldContinue:
+            return True
+        print(action_list)
+
+
         for action in action_list:
             if self.doActionWithNumber(action):
                 break
-        if not self.checkTetris():
-            return False
         return True
 
 
@@ -267,6 +276,23 @@ class Game:
         for line in range(len(copyList)):
             print(copyList[line])
 
+    def nextStep(self):
+        if self.shouldContinue == True:
+            return
+        if self.rotateActions > 0:
+            self.rotateActions -=1
+            self.doAction(3)
+            return
+        if self.leftActions > 0:
+            self.leftActions -= 1
+            self.doAction(2)
+            return
+        if not self.doAction(0):
+            self.board = self.getRender_()
+            self.shouldContinue = True
+            if not self.checkTetris():
+                return False
+
 
     # <<<< reward functions >>>>\
 
@@ -310,6 +336,3 @@ class Game:
                 if board[y][x] == 0 and board[y-1][x] == 1:
                     ret += 1
         return ret
-
-for i in range(100):
-    temp = Game(24,10)
